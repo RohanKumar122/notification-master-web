@@ -11,10 +11,13 @@ if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !pr
   console.error('❌ Missing Firebase environment variables. Please check your .env file.');    
 }
 
-MONGO_URI='mongodb://localhost:27017'
+// MONGO_URI='mongodb://localhost:27017'
 
 // MongoDB connection
-const mongoClient = new MongoClient(MONGO_URI);
+const mongoClient = new MongoClient(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 let tokensCol;
 
 mongoClient.connect()
