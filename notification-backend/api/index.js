@@ -114,6 +114,7 @@ app.post('/send', async (req, res) => {
   }
 });
 
+module.exports = app;
 // ✅ API to delete a token
 // Start server
 // app.listen(process.env.PORT || 5000, () => {
