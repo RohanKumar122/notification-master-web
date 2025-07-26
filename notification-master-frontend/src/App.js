@@ -15,7 +15,7 @@ const SendNotificationForm = () => {
   const [response, setResponse] = useState('');
 
   useEffect(() => {
-    axios.get(`${BACKEND_URL}/tokens`)
+    axios.get(`${BACKEND_URL}/api/tokens`)
       .then(res => {
         setTokens(res.data.tokens);
       })
@@ -26,12 +26,12 @@ const SendNotificationForm = () => {
     if (!selectedToken || !title || !body) return alert('All fields are required!');
 
     const payloads = selectedToken === 'all'
-      ? tokens.map(t => axios.post(`${BACKEND_URL}/send`, {
+      ? tokens.map(t => axios.post(`${BACKEND_URL}/api/send`, {
           token: t.token,
           title,
           body,
         }))
-      : [axios.post(`${BACKEND_URL}/send`, { token: selectedToken, title, body })];
+      : [axios.post(`${BACKEND_URL}/api/send`, { token: selectedToken, title, body })];
 
     try {
       await Promise.all(payloads);

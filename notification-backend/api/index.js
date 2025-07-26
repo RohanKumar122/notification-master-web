@@ -79,5 +79,9 @@ app.post('/api/send', async (req, res) => {
 });
 
 // Export for Vercel
-module.exports = app;
-module.exports.handler = serverless(app);
+// module.exports = app;
+// module.exports.handler = serverless(app);
+
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`Server running on port ${process.env.PORT || 5000}`);
+});
