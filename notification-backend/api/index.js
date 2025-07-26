@@ -1,25 +1,36 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-require('dotenv').config();
-const admin = require('firebase-admin');
 const { MongoClient } = require('mongodb');
+const admin = require('firebase-admin');
+const dotenv = require('dotenv');
+const cors = require('cors');
 
-// MONGO_URI='mongodb://localhost:27017'
+// Load environment variables from parent .env
+dotenv.config({ path: '../.env' });
 
-// MongoDB connection
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Check if MONGO_URI is defined
+if (!process.env.MONGO_URI) {
+  throw new Error('❌ MONGO_URI not defined in .env file');
+}
+
+// MongoDB setup
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let tokensCol;
 
 mongoClient.connect()
   .then(() => {
-    const db = mongoClient.db('notificationApp'); // DB name
+    const db = mongoClient.db('notification');
     tokensCol = db.collection('tokens');
-    console.log('✅ MongoDB connected');
+    console.log('✅ Connected to MongoDB');
   })
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+  });
 
-// Firebase Admin initialization
+// Firebase Admin SDK setup
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
@@ -28,13 +39,23 @@ admin.initializeApp({
   }),
 });
 
+// Health check route
+app.get('/status', async (req, res) => {
+  try {
+    await mongoClient.db('notification').command({ ping: 1 });
+    res.status(200).send({
+      success: true,
+      message: 'Server is running and MongoDB is connected',
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: 'Server is running but MongoDB connection failed',
+    });
+  }
+});
 
-// Initialize Express app
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-
-// Get all registered tokens
+// Get all device tokens
 app.get('/tokens', async (req, res) => {
   try {
     const tokens = await tokensCol.find().toArray();
@@ -44,8 +65,7 @@ app.get('/tokens', async (req, res) => {
   }
 });
 
-
-// ✅ API to register device token
+// Register device token
 app.post('/register', async (req, res) => {
   const { token } = req.body;
 
@@ -65,16 +85,16 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// ✅ API to send notification
+// Send push notification
 app.post('/send', async (req, res) => {
   const { token, title, body } = req.body;
 
   if (!token || !title || !body) {
-    return res.status(400).send({ error: 'Missing required fields' });
+    return res.status(400).send({ success: false, error: 'Missing required fields' });
   }
 
   const message = {
-    token: token,
+    token,
     notification: { title, body },
     android: { notification: { sound: 'default' } },
     apns: { payload: { aps: { sound: 'default' } } },
@@ -89,7 +109,5 @@ app.post('/send', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
-});
+// Export for Vercel
+module.exports = app;
