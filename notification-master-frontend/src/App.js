@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+// require('dotenv').config();
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+
+// BACKEND_URL = 'http://localhost:5000';
+// const BACKEND_URL = 'https://master-slave-notification.vercel.app';
 const SendNotificationForm = () => {
   const [tokens, setTokens] = useState([]);
   const [selectedToken, setSelectedToken] = useState('');
@@ -9,7 +15,7 @@ const SendNotificationForm = () => {
   const [response, setResponse] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/tokens')
+    axios.get(`${BACKEND_URL}/tokens`)
       .then(res => {
         setTokens(res.data.tokens);
       })
@@ -20,12 +26,12 @@ const SendNotificationForm = () => {
     if (!selectedToken || !title || !body) return alert('All fields are required!');
 
     const payloads = selectedToken === 'all'
-      ? tokens.map(t => axios.post('http://localhost:5000/send', {
+      ? tokens.map(t => axios.post(`${BACKEND_URL}/send`, {
           token: t.token,
           title,
           body,
         }))
-      : [axios.post('http://localhost:5000/send', { token: selectedToken, title, body })];
+      : [axios.post(`${BACKEND_URL}/send`, { token: selectedToken, title, body })];
 
     try {
       await Promise.all(payloads);
