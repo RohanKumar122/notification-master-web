@@ -9,7 +9,9 @@ const admin = require('firebase-admin');
 require('dotenv').config({ path: '../.env' });
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*' // Allow all origins
+}));
 app.use(bodyParser.json());
 
 let tokensCol = null;
