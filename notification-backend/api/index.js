@@ -11,8 +11,6 @@ if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !pr
   console.error('❌ Missing Firebase environment variables. Please check your .env file.');    
 }
 
-// MONGO_URI='mongodb://localhost:27017'
-
 // MongoDB connection
 const mongoClient = new MongoClient(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -116,7 +114,8 @@ app.post('/send', async (req, res) => {
   }
 });
 
+// ✅ API to delete a token
 // Start server
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
-});
+// app.listen(process.env.PORT || 5000, () => {
+//   console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+// });
