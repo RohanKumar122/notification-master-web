@@ -6,7 +6,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const admin = require('firebase-admin');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: '../.env', override: true });
+
 
 const app = express();
 app.use(cors({
