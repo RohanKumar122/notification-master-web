@@ -1,21 +1,15 @@
 // api/index.js
-
 const express = require('express');
 const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
 const admin = require('firebase-admin');
+const connectDB = require('./db');
 require('dotenv').config({ path: '../.env', override: true });
 
-
 const app = express();
-app.use(cors({
-  origin: '*' // Allow all origins
-}));
+app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
-
-let tokensCol = null;
 
 // Firebase setup
 if (!admin.apps.length) {
@@ -28,16 +22,21 @@ if (!admin.apps.length) {
   });
 }
 
-// MongoDB setup
-const mongoClient = new MongoClient(process.env.MONGO_URI);
-mongoClient.connect().then(() => {
-  tokensCol = mongoClient.db('notificationApp').collection('tokens');
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  try {
+    const { db } = await connectDB();
+    req.tokensCol = db.collection('tokens');
+    next();
+  } catch (err) {
+    return res.status(500).send({ success: false, error: 'DB connection failed' });
+  }
 });
 
 // Routes
 app.get('/api/status', async (req, res) => {
   try {
-    await mongoClient.db('notificationApp').command({ ping: 1 });
+    await req.tokensCol.findOne({});
     res.status(200).send({ success: true, message: 'Server & MongoDB connected' });
   } catch {
     res.status(500).send({ success: false, message: 'MongoDB error' });
@@ -46,7 +45,7 @@ app.get('/api/status', async (req, res) => {
 
 app.get('/api/tokens', async (req, res) => {
   try {
-    const tokens = await tokensCol.find().toArray();
+    const tokens = await req.tokensCol.find().toArray();
     res.status(200).send({ success: true, tokens });
   } catch {
     res.status(500).send({ success: false, error: 'Fetch tokens failed' });
@@ -57,8 +56,8 @@ app.post('/api/register', async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).send({ success: false, error: 'Token is required' });
 
-  const exists = await tokensCol.findOne({ token });
-  if (!exists) await tokensCol.insertOne({ token });
+  const exists = await req.tokensCol.findOne({ token });
+  if (!exists) await req.tokensCol.insertOne({ token });
   res.status(200).send({ success: true, message: 'Token registered' });
 });
 
@@ -82,9 +81,5 @@ app.post('/api/send', async (req, res) => {
 });
 
 // Export for Vercel
-// module.exports = app;
-// module.exports.handler = serverless(app);
-
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`Server running on port ${process.env.PORT || 5000}`);
-});
+module.exports = app;
+module.exports.handler = serverless(app);
